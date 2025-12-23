@@ -1,0 +1,671 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum Gender {
+  M
+  F
+  OTHER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ProficiencyLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+  NATIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  IN_TRANSIT
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  FAKE
+  OFFENSIVE
+  HARASSMENT
+  OTHER
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  emailVerified     Boolean      @default(false) @map("email_verified")
+  emailVerifiedAt   DateTime?    @map("email_verified_at")
+  passwordHash      String?      @map("password_hash")
+  firstName         String       @map("first_name")
+  lastName          String       @map("last_name")
+  phone             String?
+  phoneVerified     Boolean      @default(false) @map("phone_verified")
+  dateOfBirth       DateTime?    @map("date_of_birth") @db.Date
+  gender            Gender?
+  avatarUrl         String?      @map("avatar_url")
+
+  role              Role         @default(STUDENT)
+  status            UserStatus   @default(ACTIVE)
+
+  city              String?
+  postalCode        String?      @map("postal_code")
+  country           String       @default("FR")
+  latitude          Float?
+  longitude         Float?
+
+  googleId          String?      @unique @map("google_id")
+  facebookId        String?      @unique @map("facebook_id")
+  appleId           String?      @unique @map("apple_id")
+
+  language          String       @default("fr")
+  timezone          String       @default("Europe/Paris")
+  currency          String       @default("EUR")
+
+  notificationsSettings Json?    @map("notifications_settings")
+
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  lastLoginAt       DateTime?    @map("last_login_at")
+  lastLoginIp       String?      @map("last_login_ip")
+  deletedAt         DateTime?    @map("deleted_at")
+
+  // Relations
+  teacherProfile    TeacherProfile?
+  bookingsAsStudent Booking[]    @relation("StudentBookings")
+  bookingsAsTeacher Booking[]    @relation("TeacherBookings")
+  paymentsAsStudent Payment[]    @relation("StudentPayments")
+  paymentsAsTeacher Payment[]    @relation("TeacherPayments")
+  payouts           Payout[]
+  reviewsGiven      Review[]     @relation("ReviewsGiven")
+  reviewsReceived   Review[]     @relation("ReviewsReceived")
+  conversationsAsStudent Conversation[] @relation("StudentConversations")
+  conversationsAsTeacher Conversation[] @relation("TeacherConversations")
+  messagesSent      Message[]
+  favorites         Favorite[]
+  notifications     Notification[]
+  referralsGiven    Referral[]   @relation("ReferralsGiven")
+  referralsReceived Referral[]   @relation("ReferralsReceived")
+  reports           Report[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model TeacherProfile {
+  id                    String          @id @default(uuid())
+  userId                String          @unique @map("user_id")
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  headline              String?
+  bio                   String?         @db.Text
+  videoUrl              String?         @map("video_url")
+  coverImageUrl         String?         @map("cover_image_url")
+
+  identityVerified      Boolean         @default(false) @map("identity_verified")
+  backgroundCheck       Boolean         @default(false) @map("background_check")
+  proBadge              Boolean         @default(false) @map("pro_badge")
+
+  teachingMode          String[]        @default(["in-person"]) @map("teaching_mode")
+  travelRadiusKm        Int?            @map("travel_radius_km")
+  travelFee             Decimal?        @map("travel_fee") @db.Decimal(10, 2)
+
+  minAdvanceHours       Int             @default(24) @map("min_advance_hours")
+  maxAdvanceDays        Int             @default(90) @map("max_advance_days")
+  autoAcceptBookings    Boolean         @default(false) @map("auto_accept_bookings")
+  bufferTimeMinutes     Int             @default(0) @map("buffer_time_minutes")
+
+  totalLessons          Int             @default(0) @map("total_lessons")
+  totalStudents         Int             @default(0) @map("total_students")
+  averageRating         Decimal         @default(0) @map("average_rating") @db.Decimal(3, 2)
+  responseTimeMinutes   Int?            @map("response_time_minutes")
+  responseRate          Decimal         @default(0) @map("response_rate") @db.Decimal(5, 2)
+
+  approvalStatus        ApprovalStatus  @default(PENDING) @map("approval_status")
+  approvedAt            DateTime?       @map("approved_at")
+  approvedById          String?         @map("approved_by_id")
+  rejectionReason       String?         @map("rejection_reason") @db.Text
+
+  googleCalendarId      String?         @map("google_calendar_id")
+  calendarSyncEnabled   Boolean         @default(false) @map("calendar_sync_enabled")
+  calendarLastSync      DateTime?       @map("calendar_last_sync")
+
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  education             TeacherEducation[]
+  experience            TeacherExperience[]
+  certifications        TeacherCertification[]
+  languages             TeacherLanguage[]
+  subjectOffers         SubjectOffer[]
+  availabilitySchedules AvailabilitySchedule[]
+  availabilityExceptions AvailabilityException[]
+
+  @@map("teacher_profiles")
+}
+
+model TeacherEducation {
+  id                String         @id @default(uuid())
+  teacherProfileId  String         @map("teacher_profile_id")
+  teacherProfile    TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  degree            String
+  institution       String
+  year              Int?
+  certificateUrl    String?        @map("certificate_url")
+  verified          Boolean        @default(false)
+  displayOrder      Int            @default(0) @map("display_order")
+
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@map("teacher_education")
+}
+
+model TeacherExperience {
+  id                String         @id @default(uuid())
+  teacherProfileId  String         @map("teacher_profile_id")
+  teacherProfile    TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  title             String
+  organization      String
+  startDate         DateTime       @map("start_date") @db.Date
+  endDate           DateTime?      @map("end_date") @db.Date
+  description       String?        @db.Text
+  displayOrder      Int            @default(0) @map("display_order")
+
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@map("teacher_experience")
+}
+
+model TeacherCertification {
+  id                String         @id @default(uuid())
+  teacherProfileId  String         @map("teacher_profile_id")
+  teacherProfile    TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  name              String
+  issuer            String
+  issueDate         DateTime?      @map("issue_date") @db.Date
+  expiryDate        DateTime?      @map("expiry_date") @db.Date
+  certificateUrl    String?        @map("certificate_url")
+  verified          Boolean        @default(false)
+
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@map("teacher_certifications")
+}
+
+model TeacherLanguage {
+  id                String            @id @default(uuid())
+  teacherProfileId  String            @map("teacher_profile_id")
+  teacherProfile    TeacherProfile    @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  language          String
+  languageCode      String            @map("language_code")
+  proficiencyLevel  ProficiencyLevel  @map("proficiency_level")
+
+  @@unique([teacherProfileId, languageCode])
+  @@map("teacher_languages")
+}
+
+model Category {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  description   String?   @db.Text
+  icon          String?
+  color         String?
+  displayOrder  Int       @default(0) @map("display_order")
+  visible       Boolean   @default(true)
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  subjects      Subject[]
+
+  @@map("categories")
+}
+
+model Subject {
+  id              String    @id @default(uuid())
+  categoryId      String    @map("category_id")
+  category        Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name            String
+  slug            String    @unique
+  description     String?   @db.Text
+  metaTitle       String?   @map("meta_title")
+  metaDescription String?   @map("meta_description") @db.Text
+  displayOrder    Int       @default(0) @map("display_order")
+  active          Boolean   @default(true)
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  subjectOffers   SubjectOffer[]
+  conversations   Conversation[]
+
+  @@map("subjects")
+}
+
+model SubjectOffer {
+  id                String         @id @default(uuid())
+  teacherProfileId  String         @map("teacher_profile_id")
+  teacherProfile    TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  subjectId         String         @map("subject_id")
+  subject           Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  levels            String[]
+  hourlyRate        Decimal        @map("hourly_rate") @db.Decimal(10, 2)
+  firstLessonFree   Boolean        @default(false) @map("first_lesson_free")
+  packages          Json?
+  teachingModes     String[]       @map("teaching_modes")
+  description       String?        @db.Text
+  methodology       String?        @db.Text
+  active            Boolean        @default(true)
+
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  bookings          Booking[]
+
+  @@unique([teacherProfileId, subjectId])
+  @@map("subject_offers")
+}
+
+model AvailabilitySchedule {
+  id                String         @id @default(uuid())
+  teacherProfileId  String         @map("teacher_profile_id")
+  teacherProfile    TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  dayOfWeek         Int            @map("day_of_week")
+  startTime         String         @map("start_time")
+  endTime           String         @map("end_time")
+  slotDurationMinutes Int          @default(60) @map("slot_duration_minutes")
+  active            Boolean        @default(true)
+
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@map("availability_schedules")
+}
+
+model AvailabilityException {
+  id                String         @id @default(uuid())
+  teacherProfileId  String         @map("teacher_profile_id")
+  teacherProfile    TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  date              DateTime       @db.Date
+  startTime         String?        @map("start_time")
+  endTime           String?        @map("end_time")
+  type              String
+  reason            String?
+
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  @@map("availability_exceptions")
+}
+
+model Booking {
+  id                  String         @id @default(uuid())
+  studentId           String         @map("student_id")
+  student             User           @relation("StudentBookings", fields: [studentId], references: [id])
+  teacherId           String         @map("teacher_id")
+  teacher             User           @relation("TeacherBookings", fields: [teacherId], references: [id])
+  subjectOfferId      String         @map("subject_offer_id")
+  subjectOffer        SubjectOffer   @relation(fields: [subjectOfferId], references: [id])
+
+  scheduledAt         DateTime       @map("scheduled_at")
+  durationMinutes     Int            @default(60) @map("duration_minutes")
+  endsAt              DateTime       @map("ends_at")
+
+  teachingMode        String         @map("teaching_mode")
+  locationAddress     String?        @map("location_address") @db.Text
+  locationLatitude    Float?         @map("location_latitude")
+  locationLongitude   Float?         @map("location_longitude")
+  locationNotes       String?        @map("location_notes") @db.Text
+  onlineMeetingUrl    String?        @map("online_meeting_url")
+
+  status              BookingStatus  @default(PENDING)
+  isRecurring         Boolean        @default(false) @map("is_recurring")
+  recurrenceParentId  String?        @map("recurrence_parent_id")
+  recurrenceRule      Json?          @map("recurrence_rule")
+
+  studentMessage      String?        @map("student_message") @db.Text
+  cancelledAt         DateTime?      @map("cancelled_at")
+  cancelledById       String?        @map("cancelled_by_id")
+  cancellationReason  String?        @map("cancellation_reason") @db.Text
+  confirmedAt         DateTime?      @map("confirmed_at")
+  completedAt         DateTime?      @map("completed_at")
+  teacherNotes        String?        @map("teacher_notes") @db.Text
+
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  payments            Payment[]
+  review              Review?
+
+  @@map("bookings")
+}
+
+model Payment {
+  id                    String         @id @default(uuid())
+  bookingId             String?        @map("booking_id")
+  booking               Booking?       @relation(fields: [bookingId], references: [id])
+  studentId             String         @map("student_id")
+  student               User           @relation("StudentPayments", fields: [studentId], references: [id])
+  teacherId             String         @map("teacher_id")
+  teacher               User           @relation("TeacherPayments", fields: [teacherId], references: [id])
+
+  amount                Decimal        @db.Decimal(10, 2)
+  teacherAmount         Decimal        @map("teacher_amount") @db.Decimal(10, 2)
+  platformFee           Decimal        @map("platform_fee") @db.Decimal(10, 2)
+  currency              String         @default("EUR")
+
+  paymentMethod         String         @map("payment_method")
+  stripePaymentIntentId String?        @map("stripe_payment_intent_id")
+  stripeChargeId        String?        @map("stripe_charge_id")
+
+  status                PaymentStatus  @default(PENDING)
+  refundedAt            DateTime?      @map("refunded_at")
+  refundAmount          Decimal?       @map("refund_amount") @db.Decimal(10, 2)
+  refundReason          String?        @map("refund_reason") @db.Text
+
+  metadata              Json?
+
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+
+  @@map("payments")
+}
+
+model Payout {
+  id              String        @id @default(uuid())
+  teacherId       String        @map("teacher_id")
+  teacher         User          @relation(fields: [teacherId], references: [id])
+
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("EUR")
+  stripePayoutId  String?       @map("stripe_payout_id")
+  stripeAccountId String?       @map("stripe_account_id")
+
+  status          PayoutStatus  @default(PENDING)
+  arrivalDate     DateTime?     @map("arrival_date") @db.Date
+  paidAt          DateTime?     @map("paid_at")
+  failedAt        DateTime?     @map("failed_at")
+  failureReason   String?       @map("failure_reason") @db.Text
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("payouts")
+}
+
+model Review {
+  id                   String            @id @default(uuid())
+  bookingId            String            @unique @map("booking_id")
+  booking              Booking           @relation(fields: [bookingId], references: [id])
+  studentId            String            @map("student_id")
+  student              User              @relation("ReviewsGiven", fields: [studentId], references: [id])
+  teacherId            String            @map("teacher_id")
+  teacher              User              @relation("ReviewsReceived", fields: [teacherId], references: [id])
+
+  rating               Int
+  pedagogyRating       Int?              @map("pedagogy_rating")
+  expertiseRating      Int?              @map("expertise_rating")
+  communicationRating  Int?              @map("communication_rating")
+  punctualityRating    Int?              @map("punctuality_rating")
+  valueRating          Int?              @map("value_rating")
+
+  comment              String?           @db.Text
+  isAnonymous          Boolean           @default(false) @map("is_anonymous")
+
+  teacherResponse      String?           @map("teacher_response") @db.Text
+  teacherResponseAt    DateTime?         @map("teacher_response_at")
+
+  isVerified           Boolean           @default(true) @map("is_verified")
+  isPublished          Boolean           @default(true) @map("is_published")
+  isReported           Boolean           @default(false) @map("is_reported")
+  moderationStatus     ModerationStatus  @default(APPROVED) @map("moderation_status")
+
+  helpfulCount         Int               @default(0) @map("helpful_count")
+
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  @@map("reviews")
+}
+
+model Conversation {
+  id                  String    @id @default(uuid())
+  studentId           String    @map("student_id")
+  student             User      @relation("StudentConversations", fields: [studentId], references: [id])
+  teacherId           String    @map("teacher_id")
+  teacher             User      @relation("TeacherConversations", fields: [teacherId], references: [id])
+  subjectId           String?   @map("subject_id")
+  subject             Subject?  @relation(fields: [subjectId], references: [id])
+
+  lastMessageAt       DateTime? @map("last_message_at")
+  lastMessagePreview  String?   @map("last_message_preview") @db.Text
+
+  archivedByStudent   Boolean   @default(false) @map("archived_by_student")
+  archivedByTeacher   Boolean   @default(false) @map("archived_by_teacher")
+
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  messages            Message[]
+
+  @@unique([studentId, teacherId])
+  @@map("conversations")
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String       @map("conversation_id")
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String       @map("sender_id")
+  sender          User         @relation(fields: [senderId], references: [id])
+
+  content         String       @db.Text
+  attachments     Json?
+  readAt          DateTime?    @map("read_at")
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  deletedAt       DateTime?    @map("deleted_at")
+
+  @@map("messages")
+}
+
+model Favorite {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId   String   @map("teacher_id")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([studentId, teacherId])
+  @@map("favorites")
+}
+
+model Notification {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type       String
+  title      String
+  message    String    @db.Text
+  actionUrl  String?   @map("action_url")
+  readAt     DateTime? @map("read_at")
+  data       Json?
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model PromoCode {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  discountType    String    @map("discount_type")
+  discountValue   Decimal   @map("discount_value") @db.Decimal(10, 2)
+
+  minAmount       Decimal?  @map("min_amount") @db.Decimal(10, 2)
+  maxDiscount     Decimal?  @map("max_discount") @db.Decimal(10, 2)
+  firstOrderOnly  Boolean   @default(false) @map("first_order_only")
+  subjectIds      String[]  @map("subject_ids")
+
+  validFrom       DateTime  @map("valid_from")
+  validTo         DateTime  @map("valid_to")
+
+  usageLimit      Int?      @map("usage_limit")
+  perUserLimit    Int       @default(1) @map("per_user_limit")
+  usageCount      Int       @default(0) @map("usage_count")
+
+  active          Boolean   @default(true)
+  createdById     String?   @map("created_by_id")
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  usages          PromoCodeUsage[]
+
+  @@map("promo_codes")
+}
+
+model PromoCodeUsage {
+  id             String    @id @default(uuid())
+  promoCodeId    String    @map("promo_code_id")
+  promoCode      PromoCode @relation(fields: [promoCodeId], references: [id])
+  userId         String    @map("user_id")
+  bookingId      String?   @map("booking_id")
+  discountAmount Decimal   @map("discount_amount") @db.Decimal(10, 2)
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("promo_code_usages")
+}
+
+model Referral {
+  id             String    @id @default(uuid())
+  referrerId     String    @map("referrer_id")
+  referrer       User      @relation("ReferralsGiven", fields: [referrerId], references: [id])
+  referrerCode   String    @unique @map("referrer_code")
+
+  referredId     String?   @map("referred_id")
+  referred       User?     @relation("ReferralsReceived", fields: [referredId], references: [id])
+  referredEmail  String?   @map("referred_email")
+
+  status         String    @default("PENDING")
+  referrerReward Decimal?  @map("referrer_reward") @db.Decimal(10, 2)
+  referredReward Decimal?  @map("referred_reward") @db.Decimal(10, 2)
+
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("referrals")
+}
+
+model Report {
+  id            String       @id @default(uuid())
+  reporterId    String       @map("reporter_id")
+  reporter      User         @relation(fields: [reporterId], references: [id])
+
+  reportedType  String       @map("reported_type")
+  reportedId    String       @map("reported_id")
+
+  reason        ReportReason
+  description   String?      @db.Text
+  status        ReportStatus @default(PENDING)
+
+  assignedToId  String?      @map("assigned_to_id")
+  adminNotes    String?      @map("admin_notes") @db.Text
+  resolvedAt    DateTime?    @map("resolved_at")
+  resolution    String?      @db.Text
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@map("reports")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  adminId     String   @map("admin_id")
+  admin       User     @relation(fields: [adminId], references: [id])
+
+  action      String
+  targetType  String?  @map("target_type")
+  targetId    String?  @map("target_id")
+  details     Json?
+
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent") @db.Text
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
