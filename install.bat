@@ -71,34 +71,26 @@ if %errorlevel% neq 0 (
     echo [OK] npm est installé
 )
 
-:: Étape 3 : Vérification de PostgreSQL
+:: Étape 3 : Information sur la base de données
 echo.
 echo ========================================
-echo [3/6] Vérification de PostgreSQL...
+echo [3/6] Configuration de la base de données...
 echo ========================================
+echo.
+echo [INFO] SQLite sera utilisé par défaut pour le développement local
+echo        - Aucune installation requise
+echo        - Fichier de base de données : dev.db
+echo        - Parfait pour débuter et tester l'application
+echo.
 psql --version >nul 2>&1
 if %errorlevel% neq 0 (
+    echo [INFO] PostgreSQL non détecté (optionnel)
+    echo        Pour la production, vous pourrez passer à PostgreSQL plus tard.
     echo.
-    echo [ATTENTION] PostgreSQL n'est pas détecté !
-    echo.
-    echo Pour utiliser SUPERPROF, vous devez installer PostgreSQL 14 ou supérieur.
-    echo.
-    echo Options :
-    echo 1. Installer PostgreSQL depuis : https://www.postgresql.org/download/windows/
-    echo 2. Utiliser Docker : docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
-    echo.
-    echo Voulez-vous continuer sans PostgreSQL ? (O/N)
-    choice /C ON /N /M "Tapez O pour continuer ou N pour quitter : "
-    if errorlevel 2 (
-        echo Installation annulée.
-        pause
-        exit /b 1
-    )
-    echo.
-    echo [ATTENTION] Vous devrez configurer PostgreSQL manuellement plus tard.
 ) else (
     psql --version
-    echo [OK] PostgreSQL est installé
+    echo [OK] PostgreSQL est également disponible pour la production
+    echo.
 )
 
 :: Étape 4 : Configuration du fichier .env
@@ -113,12 +105,15 @@ if not exist ".env" (
         echo Copie de .env.example vers .env...
         copy .env.example .env
         echo.
-        echo [IMPORTANT] Le fichier .env a été créé.
-        echo Vous devez le modifier avec vos propres configurations :
+        echo [IMPORTANT] Le fichier .env a été créé avec SQLite par défaut.
         echo.
-        echo 1. DATABASE_URL : Votre connexion PostgreSQL
-        echo 2. NEXTAUTH_SECRET : Générez une clé secrète unique
-        echo 3. STRIPE_SECRET_KEY : Vos clés Stripe (si vous utilisez les paiements)
+        echo Configuration actuelle :
+        echo - Base de données : SQLite (dev.db) - Prêt à l'emploi !
+        echo.
+        echo Configurations optionnelles à modifier :
+        echo 1. NEXTAUTH_SECRET : Générez une clé secrète unique (recommandé)
+        echo 2. STRIPE_SECRET_KEY : Vos clés Stripe (optionnel)
+        echo 3. DATABASE_URL : Changez pour PostgreSQL en production (optionnel)
         echo.
         echo Voulez-vous modifier le fichier .env maintenant ? (O/N)
         choice /C ON /N /M "Tapez O pour ouvrir ou N pour continuer : "
@@ -173,27 +168,26 @@ if %errorlevel% neq 0 (
     echo.
 )
 
-:: Migration de la base de données (optionnel)
+:: Initialisation de la base de données SQLite
 echo.
-echo Voulez-vous initialiser la base de données maintenant ? (O/N)
-echo (Assurez-vous que PostgreSQL est en cours d'exécution et configuré dans .env)
-choice /C ON /N /M "Tapez O pour initialiser ou N pour passer : "
-if errorlevel 1 if not errorlevel 2 (
+echo Initialisation de la base de données SQLite...
+echo (Création automatique du fichier dev.db)
+echo.
+call npx prisma db push
+if %errorlevel% neq 0 (
     echo.
-    echo Migration de la base de données...
-    call npx prisma db push
-    if %errorlevel% neq 0 (
-        echo.
-        echo [ATTENTION] La migration de la base de données a échoué
-        echo Vérifiez que :
-        echo 1. PostgreSQL est en cours d'exécution
-        echo 2. La DATABASE_URL dans .env est correcte
-        echo 3. La base de données existe
-        echo.
-        echo Vous pourrez le faire manuellement avec : npx prisma db push
-    ) else (
-        echo [OK] Base de données initialisée
-    )
+    echo [ATTENTION] L'initialisation de la base de données a échoué
+    echo.
+    echo Vérifiez que :
+    echo 1. Le fichier .env existe et contient DATABASE_URL
+    echo 2. Le schema Prisma est valide
+    echo.
+    echo Vous pourrez réessayer manuellement avec :
+    echo cd superprof-app ^&^& npx prisma db push
+    echo.
+) else (
+    echo [OK] Base de données SQLite créée et initialisée !
+    echo     Fichier : superprof-app/dev.db
 )
 
 :: Retour au répertoire racine
@@ -205,23 +199,25 @@ echo ========================================
 echo    Installation Terminée !
 echo ========================================
 echo.
+echo Votre application est prête !
+echo.
+echo Base de données : SQLite (dev.db)
+echo - Aucune configuration supplémentaire nécessaire
+echo - Parfait pour le développement local
+echo.
 echo Prochaines étapes :
 echo.
-echo 1. Vérifiez et modifiez le fichier .env avec vos configurations :
-echo    - superprof-app\.env
-echo.
-echo 2. Si vous n'avez pas encore configuré PostgreSQL :
-echo    - Installez PostgreSQL
-echo    - Créez une base de données "superprof_db"
-echo    - Mettez à jour DATABASE_URL dans .env
-echo    - Exécutez : cd superprof-app ^&^& npx prisma db push
-echo.
-echo 3. Pour démarrer l'application, utilisez :
-echo    - start.bat (pour Windows)
+echo 1. Pour démarrer l'application :
+echo    - Double-cliquez sur start.bat
 echo    ou
 echo    - cd superprof-app ^&^& npm run dev
 echo.
-echo 4. L'application sera accessible sur : http://localhost:3000
+echo 2. L'application sera accessible sur : http://localhost:3000
+echo.
+echo 3. (Optionnel) Modifiez superprof-app\.env pour :
+echo    - Générer une clé NEXTAUTH_SECRET sécurisée
+echo    - Ajouter vos clés Stripe
+echo    - Passer à PostgreSQL en production
 echo.
 echo ========================================
 echo.

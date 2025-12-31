@@ -11,70 +11,98 @@
 Le script va automatiquement :
 - ✅ Vérifier que Node.js est installé (version 18+)
 - ✅ Vérifier que npm est installé
-- ✅ Vérifier que PostgreSQL est installé
+- ✅ Configurer SQLite comme base de données (aucune installation requise !)
 - ✅ Créer le fichier de configuration `.env`
 - ✅ Installer toutes les dépendances npm
 - ✅ Générer le client Prisma
-- ✅ Initialiser la base de données (optionnel)
+- ✅ Créer et initialiser la base de données SQLite automatiquement
 
 ### Prérequis
 
-Avant de lancer `install.bat`, assurez-vous d'avoir :
+Avant de lancer `install.bat`, vous avez besoin de :
 
-#### 1. Node.js (version 18 ou supérieure)
+#### 1. Node.js (version 18 ou supérieure) - **OBLIGATOIRE**
 - **Téléchargement** : https://nodejs.org/
 - **Installation** : Téléchargez et installez la version LTS
 - **Vérification** : Ouvrez un terminal et tapez `node --version`
 
-#### 2. PostgreSQL (version 14 ou supérieure)
+#### 2. Git (optionnel, pour cloner le projet)
+- **Téléchargement** : https://git-scm.com/download/win
+
+**C'est tout !** SQLite est inclus et ne nécessite aucune installation.
+
+### Base de Données : SQLite vs PostgreSQL
+
+#### SQLite (Par défaut - Recommandé pour débuter)
+- ✅ **Aucune installation requise**
+- ✅ **Configuration automatique**
+- ✅ **Parfait pour le développement local**
+- ✅ **Fichier unique : `dev.db`**
+- ✅ **Prêt en quelques secondes**
+
+#### PostgreSQL (Optionnel - Pour la production)
+- 📦 Nécessite une installation séparée
+- ⚙️ Configuration manuelle requise
+- 🚀 Recommandé pour le déploiement en production
 - **Téléchargement** : https://www.postgresql.org/download/windows/
-- **Installation** :
-  - Téléchargez l'installateur Windows
-  - Notez bien le mot de passe que vous définissez pour l'utilisateur `postgres`
-  - Le port par défaut est `5432`
 - **Alternative Docker** :
   ```bash
   docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
   ```
 
-#### 3. Git (optionnel, pour cloner le projet)
-- **Téléchargement** : https://git-scm.com/download/win
+## 📝 Configuration
 
-## 📝 Configuration Manuelle
+### Configuration Automatique avec SQLite
 
-### Étape 1 : Configuration de PostgreSQL
+**Bonne nouvelle !** Avec SQLite, aucune configuration manuelle n'est nécessaire.
 
-1. **Créez une base de données** :
+Le fichier `.env` est créé automatiquement avec :
+```env
+DATABASE_URL="file:./dev.db"
+```
+
+La base de données `dev.db` sera créée automatiquement au premier démarrage.
+
+### Configuration Optionnelle
+
+#### Générer une clé NEXTAUTH_SECRET sécurisée (Recommandé)
+
+Après l'exécution de `install.bat`, vous pouvez améliorer la sécurité en ouvrant `superprof-app/.env` et en modifiant :
+
+```env
+# Générez une clé secrète aléatoire (32+ caractères)
+NEXTAUTH_SECRET="votre-cle-secrete-aleatoire-ici"
+```
+
+#### Passer à PostgreSQL (Pour la production)
+
+Si vous souhaitez utiliser PostgreSQL au lieu de SQLite :
+
+1. **Installez PostgreSQL** :
+   - Téléchargez depuis https://www.postgresql.org/download/windows/
+   - Notez le mot de passe défini lors de l'installation
+
+2. **Créez une base de données** :
    ```sql
    CREATE DATABASE superprof_db;
    ```
 
-2. **Notez vos informations de connexion** :
-   - Utilisateur : `postgres` (par défaut)
-   - Mot de passe : celui que vous avez défini lors de l'installation
-   - Host : `localhost`
-   - Port : `5432`
-   - Base de données : `superprof_db`
+3. **Modifiez le fichier `.env`** :
+   ```env
+   # Commentez SQLite
+   # DATABASE_URL="file:./dev.db"
 
-### Étape 2 : Configuration du fichier .env
+   # Décommentez et configurez PostgreSQL
+   DATABASE_URL="postgresql://postgres:votre_mot_de_passe@localhost:5432/superprof_db?schema=public"
+   ```
 
-Après l'exécution de `install.bat`, ouvrez le fichier `superprof-app/.env` et modifiez :
+4. **Réinitialisez la base de données** :
+   ```bash
+   cd superprof-app
+   npx prisma db push
+   ```
 
-```env
-# Remplacez username, password par vos vraies informations
-DATABASE_URL="postgresql://postgres:votre_mot_de_passe@localhost:5432/superprof_db?schema=public"
-
-# Générez une clé secrète aléatoire (32+ caractères)
-NEXTAUTH_SECRET="changez-cette-cle-secrete-par-une-vraie-cle-aleatoire"
-
-# Clés Stripe (optionnel pour le moment, utilisez les clés de test)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_SECRET_KEY="sk_test_..."
-```
-
-### Étape 3 : Génération d'une clé secrète
-
-Pour générer une clé `NEXTAUTH_SECRET` sécurisée, utilisez l'une de ces méthodes :
+#### Méthodes pour générer une clé NEXTAUTH_SECRET
 
 **Option 1 : En ligne**
 - Allez sur https://generate-secret.vercel.app/32
@@ -124,16 +152,19 @@ npx prisma studio
 - Redémarrez votre terminal/invite de commande
 - Réexécutez `install.bat`
 
-### Erreur : "PostgreSQL n'est pas détecté"
-- Installez PostgreSQL depuis https://www.postgresql.org/download/windows/
-- Ajoutez PostgreSQL au PATH système
-- Ou utilisez Docker : `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14`
+### Message : "PostgreSQL non détecté (optionnel)"
+- **C'est normal !** SQLite est utilisé par défaut
+- PostgreSQL n'est nécessaire que pour la production
+- Vous pouvez continuer sans problème
 
 ### Erreur de connexion à la base de données
-- Vérifiez que PostgreSQL est en cours d'exécution
-- Ouvrez pgAdmin ou exécutez `psql -U postgres` pour tester la connexion
-- Vérifiez que le `DATABASE_URL` dans `.env` est correct
-- Assurez-vous que la base de données `superprof_db` existe
+- Vérifiez que le fichier `.env` existe dans `superprof-app/`
+- Vérifiez que `DATABASE_URL="file:./dev.db"` est présent dans `.env`
+- Si vous utilisez PostgreSQL :
+  - Vérifiez que PostgreSQL est en cours d'exécution
+  - Ouvrez pgAdmin ou exécutez `psql -U postgres` pour tester la connexion
+  - Vérifiez que le `DATABASE_URL` dans `.env` est correct
+  - Assurez-vous que la base de données existe
 
 ### Erreur lors de l'installation des dépendances npm
 ```bash
@@ -178,9 +209,15 @@ chmod +x start.sh
 ## 💡 Conseils
 
 1. **Développement** : Utilisez toujours `npm run dev` pour le développement
-2. **Base de données** : Sauvegardez régulièrement votre base de données
+2. **Base de données SQLite** :
+   - Le fichier `dev.db` contient toutes vos données
+   - Sauvegardez-le régulièrement (c'est juste un fichier)
+   - Copiez `dev.db` pour créer des sauvegardes instantanées
 3. **Sécurité** : Ne partagez JAMAIS votre fichier `.env`
-4. **Production** : Utilisez des variables d'environnement réelles en production
+4. **Production** :
+   - Passez à PostgreSQL pour la production
+   - Utilisez des variables d'environnement sécurisées
+   - Générez une nouvelle clé `NEXTAUTH_SECRET`
 
 ## ❓ Besoin d'aide ?
 

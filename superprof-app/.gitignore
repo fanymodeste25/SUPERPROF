@@ -39,6 +39,12 @@ yarn-error.log*
 # Allow .env.example to be committed
 !.env.example
 
+# database (SQLite)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
 # vercel
 .vercel
 
