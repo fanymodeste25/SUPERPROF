@@ -21,30 +21,73 @@ SUPERPROF est une application web et mobile permettant de mettre en relation des
 
 ## 🚀 Démarrage Rapide
 
-### Prérequis
+### Installation Automatique (Windows)
+
+**La méthode la plus simple :**
+
+1. Double-cliquez sur `install.bat`
+2. Suivez les instructions à l'écran
+3. L'application sera prête à l'emploi !
+
+📖 **[Guide d'installation complet](INSTALLATION.md)**
+
+### Installation Manuelle
+
+#### Prérequis
 
 - Node.js 18+
 - PostgreSQL 14+
 - npm ou yarn
 
-### Installation
+#### Étapes
 
 ```bash
 # Cloner le repository
 git clone <repository-url>
 
-# Installer les dépendances
+# Installer avec le script automatique (Windows)
+install.bat
+
+# OU Installation manuelle :
+
+# 1. Aller dans le dossier de l'application
+cd superprof-app
+
+# 2. Installer les dépendances
 npm install
 
-# Configurer les variables d'environnement
+# 3. Configurer les variables d'environnement
 cp .env.example .env
+# Puis modifier .env avec vos configurations
 
-# Lancer les migrations de base de données
-npm run migrate
+# 4. Générer le client Prisma
+npx prisma generate
 
-# Démarrer le serveur de développement
+# 5. Initialiser la base de données
+npx prisma db push
+
+# 6. Démarrer le serveur de développement
 npm run dev
 ```
+
+### Démarrage de l'application
+
+**Windows :**
+```bash
+start.bat
+```
+
+**Linux/Mac :**
+```bash
+./start.sh
+```
+
+**Manuellement :**
+```bash
+cd superprof-app && npm run dev
+```
+
+L'application sera disponible sur http://localhost:3000
 
 ## 🛠️ Technologies Utilisées
 
