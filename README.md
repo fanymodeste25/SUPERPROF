@@ -13,6 +13,7 @@ SUPERPROF est une application web et mobile permettant de mettre en relation des
 
 ## 📚 Documentation
 
+- **[Guide d'Installation Complet (PC vierge)](docs/INSTALLATION_COMPLETE.md)** ⭐ *Nouveau - Installation depuis zéro*
 - [Architecture Technique](docs/ARCHITECTURE.md)
 - [Fonctionnalités Clés](docs/FEATURES.md)
 - [Schéma de Base de Données](docs/DATABASE.md)
