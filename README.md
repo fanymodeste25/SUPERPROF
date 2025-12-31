@@ -45,11 +45,15 @@ SUPERPROF est une application web et mobile permettant de mettre en relation des
 ```bash
 # Cloner le repository
 git clone <repository-url>
+```
 
-# Installer avec le script automatique (Windows)
-install.bat
+**Installation automatique (Windows uniquement) :**
+- Double-cliquez sur `install.bat` à la racine du projet
+- Suivez les instructions à l'écran
 
-# OU Installation manuelle :
+**OU Installation manuelle :**
+
+```bash
 
 # 1. Aller dans le dossier de l'application
 cd superprof-app
