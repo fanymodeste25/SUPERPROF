@@ -55,9 +55,12 @@ RUN npx prisma generate
 ## Changements Effectués
 
 J'ai effectué les changements suivants :
-1. ✅ Rétrogradé de Prisma 7.2.0 à 6.6.0 (plus stable)
-2. ✅ Retiré les modifications de configuration Prisma 7 (prisma.config.ts, adaptateurs)
-3. ✅ Restauré la configuration traditionnelle schema.prisma avec `url = env("DATABASE_URL")`
+1. ✅ Ajouté `binaryTargets = ["native"]` au generator dans schema.prisma
+2. ✅ Testé Prisma 5.x, 6.x, et 7.x - tous bloqués par le même problème réseau
+3. ✅ Configuré pour utiliser les binaires natifs au lieu de téléchargements cross-platform
+4. ✅ Restauré la configuration traditionnelle schema.prisma avec `url = env("DATABASE_URL")`
+
+**Note importante** : Le problème est **uniquement réseau**. Une fois l'accès à `binaries.prisma.sh` débloqué, la commande `npx prisma generate` devrait fonctionner immédiatement.
 
 ## Prochaines Étapes
 
