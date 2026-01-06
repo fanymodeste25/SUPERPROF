@@ -39,6 +39,13 @@ export default function Header() {
               Comment ça marche
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
             </Link>
+            <Link
+              href="/about"
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium relative group"
+            >
+              À propos
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
+            </Link>
           </nav>
 
           {/* Actions */}
